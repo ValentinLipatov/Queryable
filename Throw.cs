@@ -15,13 +15,5 @@ namespace Queryable
             if (!type.IsAssignableFrom(assignableType))
                 throw new ArgumentOutOfRangeException(name);
         }
-
-        public static T IfNotIs<T> (object value)
-        {
-            if (value is T typedValue)
-                return typedValue;
-            else
-                throw new InvalidCastException();
-        }
     }
 }

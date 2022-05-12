@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Queryable
 {
-    public class QueryTranslator : ExpressionVisitor
+    public class QueryTranslator : CusttomExpressionVisitor // ExpressionVisitor
     {
         private StringBuilder _stringBuilder;
 
@@ -19,7 +19,7 @@ namespace Queryable
         private static Expression StripQuotes(Expression e)
         {
             while (e.NodeType == ExpressionType.Quote)
-                e = Throw.IfNotIs<UnaryExpression>(e).Operand;
+                e = ((UnaryExpression)e).Operand;
 
             return e;
         }

@@ -19,7 +19,7 @@ namespace Queryable
                 var type = typeof(Query<>);
                 var genericType = type.MakeGenericType(elementType);
 
-                return Throw.IfNotIs<IQueryable>(Activator.CreateInstance(genericType, new object[] { this, expression }));
+                return (IQueryable)Activator.CreateInstance(genericType, new object[] { this, expression });
             }
             catch (TargetInvocationException exception)
             {
@@ -29,7 +29,7 @@ namespace Queryable
 
         T IQueryProvider.Execute<T>(Expression expression)
         {
-            return Throw.IfNotIs<T>(Execute(expression));
+            return (T)Execute(expression);
         }
 
         object IQueryProvider.Execute(Expression expression)
@@ -40,6 +40,7 @@ namespace Queryable
         public object Execute(Expression expression)
         {
             var comandText = new QueryTranslator().Translate(expression);
+            var elementType = Helper.GetElementType(expression.Type);
 
             // TODO: Выполнить запрос и вернуть ответ
 

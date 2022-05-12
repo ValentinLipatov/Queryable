@@ -33,12 +33,12 @@ namespace Queryable
 
         public IEnumerator<T> GetEnumerator()
         {
-            return Throw.IfNotIs<IEnumerable<T>>(_provider.Execute(_expression)).GetEnumerator();
+            return ((IEnumerable<T>)_provider.Execute(_expression)).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return Throw.IfNotIs<IEnumerable>(_provider.Execute(_expression)).GetEnumerator();
+            return ((IEnumerable)_provider.Execute(_expression)).GetEnumerator();
         }
     }
 }
