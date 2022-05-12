@@ -16,49 +16,50 @@ namespace Queryable
             return _stringBuilder.ToString();
         }
 
-        private static Expression StripQuotes(Expression e)
+        private static Expression StripQuotes(Expression expression)
         {
-            while (e.NodeType == ExpressionType.Quote)
-                e = ((UnaryExpression)e).Operand;
+            while (expression.NodeType == ExpressionType.Quote)
+                expression = ((UnaryExpression)expression).Operand;
 
-            return e;
+            return expression;
         }
 
-        protected override Expression VisitMethodCall(MethodCallExpression m)
+        protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
         {
-            if (m.Method.DeclaringType == typeof(System.Linq.Queryable) && m.Method.Name == "Where")
+            if (methodCallExpression.Method.DeclaringType == typeof(System.Linq.Queryable) && methodCallExpression.Method.Name == "Where")
             {
                 _stringBuilder.Append("SELECT * FROM (");
-                Visit(m.Arguments[0]);
+                Visit(methodCallExpression.Arguments[0]);
                 _stringBuilder.Append(") AS T WHERE ");
-                LambdaExpression lambda = (LambdaExpression)StripQuotes(m.Arguments[1]);
+                LambdaExpression lambda = (LambdaExpression)StripQuotes(methodCallExpression.Arguments[1]);
                 Visit(lambda.Body);
 
-                return m;
+                return methodCallExpression;
             }
-            throw new NotSupportedException($"The method '{m.Method.Name}' is not supported");
+            throw new NotSupportedException($"The method '{methodCallExpression.Method.Name}' is not supported");
         }
 
-        protected override Expression VisitUnary(UnaryExpression u)
+        protected override Expression VisitUnary(UnaryExpression unaryExpression)
         {
-            switch (u.NodeType)
+            switch (unaryExpression.NodeType)
             {
                 case ExpressionType.Not:
                     _stringBuilder.Append(" NOT ");
-                    Visit(u.Operand);
+                    Visit(unaryExpression.Operand);
                     break;
 
                 default:
-                    throw new NotSupportedException($"The unary operator '{u.NodeType}' is not supported");
+                    throw new NotSupportedException($"The unary operator '{unaryExpression.NodeType}' is not supported");
             }
-            return u;
+            return unaryExpression;
         }
 
-        protected override Expression VisitBinary(BinaryExpression b)
+        protected override Expression VisitBinary(BinaryExpression binaryExpression)
         {
             _stringBuilder.Append("(");
-            Visit(b.Left);
-            switch (b.NodeType)
+            Visit(binaryExpression.Left);
+
+            switch (binaryExpression.NodeType)
             {
                 case ExpressionType.And:
                     _stringBuilder.Append(" AND ");
@@ -93,61 +94,62 @@ namespace Queryable
                     break;
 
                 default:
-                    throw new NotSupportedException($"The binary operator '{b.NodeType}' is not supported");
+                    throw new NotSupportedException($"The binary operator '{binaryExpression.NodeType}' is not supported");
             }
 
-            Visit(b.Right);
+            Visit(binaryExpression.Right);
             _stringBuilder.Append(")");
-            return b;
+
+            return binaryExpression;
         }
 
-        protected override Expression VisitConstant(ConstantExpression c)
+        protected override Expression VisitConstant(ConstantExpression constantExpression)
         {
-            IQueryable q = c.Value as IQueryable;
+            IQueryable q = constantExpression.Value as IQueryable;
             if (q != null)
             {
                 _stringBuilder.Append("SELECT * FROM ");
                 _stringBuilder.Append(q.ElementType.Name);
             }
-            else if (c.Value == null)
+            else if (constantExpression.Value == null)
             {
                 _stringBuilder.Append("NULL");
             }
             else
             {
-                switch (Type.GetTypeCode(c.Value.GetType()))
+                switch (Type.GetTypeCode(constantExpression.Value.GetType()))
                 {
                     case TypeCode.Boolean:
-                        _stringBuilder.Append(((bool)c.Value) ? 1 : 0);
+                        _stringBuilder.Append(((bool)constantExpression.Value) ? 1 : 0);
                         break;
 
                     case TypeCode.String:
                         _stringBuilder.Append("'");
-                        _stringBuilder.Append(c.Value);
+                        _stringBuilder.Append(constantExpression.Value);
                         _stringBuilder.Append("'");
                         break;
 
                     case TypeCode.Object:
-                        throw new NotSupportedException($"The constant for '{c.Value}' is not supported");
+                        throw new NotSupportedException($"The constant for '{constantExpression.Value}' is not supported");
 
                     default:
-                        _stringBuilder.Append(c.Value);
+                        _stringBuilder.Append(constantExpression.Value);
                         break;
                 }
             }
 
-            return c;
+            return constantExpression;
         }
 
-        protected override Expression VisitMember(MemberExpression m)
+        protected override Expression VisitMember(MemberExpression memberExpression)
         {
-            if (m.Expression != null && m.Expression.NodeType == ExpressionType.Parameter)
+            if (memberExpression.Expression != null && memberExpression.Expression.NodeType == ExpressionType.Parameter)
             {
-                _stringBuilder.Append(m.Member.Name);
-                return m;
+                _stringBuilder.Append(memberExpression.Member.Name);
+                return memberExpression;
             }
 
-            throw new NotSupportedException($"The member '{m.Member.Name}' is not supported");
+            throw new NotSupportedException($"The member '{memberExpression.Member.Name}' is not supported");
         }
     }
 }
